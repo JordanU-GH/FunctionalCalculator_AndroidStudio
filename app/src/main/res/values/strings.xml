@@ -1,4 +1,50 @@
 <resources>
     <string name="app_name">FunctionalCalculator</string>
-    <string name="text_change">Change</string>
+    <string name="display_name">DisplayText</string>
+    <string name="display_default_value">0</string>
+    <string-array name="btn_names">
+        <item>btn7</item>
+        <item>btn8</item>
+        <item>btn9</item>
+        <item>btnSqrt</item>
+        <item>btnClear</item>
+        <item>btn4</item>
+        <item>btn5</item>
+        <item>btn6</item>
+        <item>btnDiv</item>
+        <item>btnPercent</item>
+        <item>btn1</item>
+        <item>btn2</item>
+        <item>btn3</item>
+        <item>btnMult</item>
+        <item>btnMinus</item>
+        <item>btnSign</item>
+        <item>btn0</item>
+        <item>btnPeriod</item>
+        <item>btnPlus</item>
+        <item>btnEquals</item>
+    </string-array>
+    <string-array name="btn_faces">
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>\u221A</item>
+        <item>C</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>\u00F7</item>
+        <item>%</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>\u00D7</item>
+        <item>-</item>
+        <item>\u00B1</item>
+        <item>0</item>
+        <item>.</item>
+        <item>+</item>
+        <item>=</item>
+    </string-array>
+
 </resources>
