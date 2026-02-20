@@ -6,8 +6,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 public abstract class AbstractController implements PropertyChangeListener {
-    private ArrayList<AbstractView> views;
-    private ArrayList<AbstractModel> models;
+    protected ArrayList<AbstractView> views;
+    protected ArrayList<AbstractModel> models;
 
     public AbstractController() {
         /* Initialize View and Model Lists */
@@ -65,7 +65,21 @@ public abstract class AbstractController implements PropertyChangeListener {
          */
         for (AbstractModel model : models) {
             try {
-                Method method = model.getClass().getMethod("set" + propertyName, newValue.getClass());
+                // ******************
+                // Code for troubleshooting
+                // System.out.println("SetModelProperty[ name: " + propertyName+ ", value: " +newValue + " ]");
+                // System.out.println("ValueType: " + newValue.getClass());
+                // *******************
+                Method method;
+                if (newValue instanceof DefaultModel.Operator){
+                    method = model.getClass().getMethod("set" + propertyName, DefaultModel.Operator.class);
+                }
+                else if (newValue instanceof  DefaultModel.CalculatorState){
+                    method = model.getClass().getMethod("set" + propertyName, DefaultModel.CalculatorState.class);
+                }
+                else {
+                    method = model.getClass().getMethod("set" + propertyName, newValue.getClass());
+                }
                 method.invoke(model, newValue);
 
             }

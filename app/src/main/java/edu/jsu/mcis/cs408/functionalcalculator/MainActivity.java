@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
         /* Register Activity View and Model with Controller */
         controller.addView(this);
         controller.addModel(model);
+        controller.setModel_zero(model);
 
         /* Initialize the Layout of the Calculator*/
         initLayout();
@@ -63,15 +64,14 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
         }
     }
 
+    // Method to handle button presses
     class CalculatorClickHandler implements View.OnClickListener {
         @Override
         public void onClick(View view) {
             String tag = view.getTag().toString();
             Toast toast = Toast.makeText(binding.getRoot().getContext(), tag, Toast.LENGTH_SHORT);
             toast.show();
-            // Determine what to do based on which button was pressed
-            // number buttons
-            // operator buttons
+            controller.handleButtonLogic(view);
         }
     }
 
@@ -185,5 +185,4 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
         btn.setText(faces[index]);
         btn.setTextSize(txtSize);
     }
-
 }

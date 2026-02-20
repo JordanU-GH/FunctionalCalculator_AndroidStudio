@@ -4,7 +4,7 @@ import android.util.Log;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.math.RoundingMode;
+import java.util.HashMap;
 
 public class DefaultModel extends AbstractModel {
     public static final String TAG = "DefaultModel";
@@ -19,18 +19,19 @@ public class DefaultModel extends AbstractModel {
         OP_SCHEDULED{ @Override public CalculatorState nextState(){ return RHS; } },
         RHS{ @Override public CalculatorState nextState(){ return RESULT; } },
         RESULT{ @Override public CalculatorState nextState(){ return LHS; } },
-        ERROR{ @Override public CalculatorState nextState(){ return CLEAR; } };
+        ERROR{ @Override public CalculatorState nextState(){ return LHS; } };
         public abstract CalculatorState nextState();
     }
     public enum Operator{
-        ADD{public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.add(R, MathContext.DECIMAL64); } },
-        SUB{public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.subtract(R, MathContext.DECIMAL64); } },
-        MULT{public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.multiply(R, MathContext.DECIMAL64); } },
-        DIV{public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.divide(R, MathContext.DECIMAL64); } },
-        NEG{public BigDecimal compute(BigDecimal operand){ return operand.negate(); } },
-        SQRT{public BigDecimal compute(BigDecimal operand){ return operand.sqrt(MathContext.DECIMAL64); } },
-        PERC{public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.multiply(R).divide(new BigDecimal( 100), MathContext.DECIMAL64); } },
-        NONE;
+        ADD{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.add(R, MathContext.DECIMAL64); } },
+        SUB{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.subtract(R, MathContext.DECIMAL64); } },
+        MULT{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.multiply(R, MathContext.DECIMAL64); } },
+        DIV{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.divide(R, MathContext.DECIMAL64); } },
+        NEG{@Override public BigDecimal compute(BigDecimal operand, BigDecimal empty){ return operand.negate(); } },
+        SQRT{@Override public BigDecimal compute(BigDecimal operand, BigDecimal empty){ return operand.sqrt(MathContext.DECIMAL64); } },
+        PERC{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.multiply(R).divide(new BigDecimal( 100), MathContext.DECIMAL64); } },
+        NONE{@Override public BigDecimal compute(BigDecimal operand, BigDecimal empty){ return operand; }};
+        public abstract BigDecimal compute(BigDecimal L, BigDecimal R);
     }
     /*
      * Initialize the model elements to known default values.  We use the setter
@@ -41,11 +42,12 @@ public class DefaultModel extends AbstractModel {
 
     public void initDefault() {
 
-        setDisplayText(new BigDecimal(0).toString());
         setCurrentOperator(Operator.NONE);
         setCurrentState(CalculatorState.CLEAR);
         setLeftOperand(new BigDecimal(0));
-        setRightOperand(null);
+        setRightOperand(new BigDecimal(0));
+        setDisplayText(new BigDecimal(0).toString());
+
     }
 
     /*
@@ -86,9 +88,19 @@ public class DefaultModel extends AbstractModel {
      this.CurrentState = newState;
     }
     public void setRightOperand(BigDecimal newVal){
-        RightOperand = newVal;
+        this.RightOperand = newVal;
     }
     public void setLeftOperand(BigDecimal newVal){
-        LeftOperand = newVal;
+        this.LeftOperand = newVal;
+    }
+
+    @Override
+    public String toString(){
+        HashMap<String, Object> dict = new HashMap<>();
+        dict.put("Operator", getCurrentOperator());
+        dict.put("State", getCurrentState());
+        dict.put("LeftOperand", getLeftOperand());
+        dict.put("RightOperand", getRightOperand());
+        return dict.toString();
     }
 }

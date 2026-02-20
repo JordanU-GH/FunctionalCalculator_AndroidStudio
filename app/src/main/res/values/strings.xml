@@ -12,16 +12,16 @@
         <item>btn5</item>
         <item>btn6</item>
         <item>btnDiv</item>
-        <item>btnPercent</item>
+        <item>btnPerc</item>
         <item>btn1</item>
         <item>btn2</item>
         <item>btn3</item>
         <item>btnMult</item>
-        <item>btnMinus</item>
-        <item>btnSign</item>
+        <item>btnSub</item>
+        <item>btnNeg</item>
         <item>btn0</item>
         <item>btnPeriod</item>
-        <item>btnPlus</item>
+        <item>btnAdd</item>
         <item>btnEquals</item>
     </string-array>
     <string-array name="btn_faces">
