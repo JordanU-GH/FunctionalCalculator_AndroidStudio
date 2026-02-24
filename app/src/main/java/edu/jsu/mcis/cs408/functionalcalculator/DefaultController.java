@@ -1,7 +1,6 @@
 package edu.jsu.mcis.cs408.functionalcalculator;
 
 import android.util.Log;
-import android.view.View;
 
 import java.math.BigDecimal;
 
@@ -16,6 +15,7 @@ public class DefaultController extends AbstractController
      * be reflected in the Model.
      */
     private DefaultModel model_zero;
+    private MainActivity view_zero;
     public static final String ELEMENT_DISPLAY_PROPERTY = "DisplayText";
     public static final String ELEMENT_LEFT_OPERAND_PROPERTY = "LeftOperand";
     public static final String ELEMENT_RIGHT_OPERAND_PROPERTY = "RightOperand";
@@ -27,6 +27,7 @@ public class DefaultController extends AbstractController
     public void setModel_zero(DefaultModel model){
         this.model_zero = model;
     }
+    public void setView_zero(MainActivity view) { this.view_zero = view; }
 
     /*
      * These are the change methods which corresponds to ELEMENT_PROPERTIES.
@@ -52,45 +53,51 @@ public class DefaultController extends AbstractController
     }
 
     // Method to determine button functionality
-    public void handleButtonLogic(View view){
-        String tag = view.getTag().toString().replace("btn","");
+    public void handleButtonLogic(String tag){
+        String shortTag = tag.replace("btn","");
         DefaultModel.CalculatorState state = model_zero.getCurrentState();
         // *******************************
         // code for debugging
         System.out.println("--------------Before Switch---------------");
         System.out.println(model_zero.toString());
-        System.out.println("Pressed: " + tag);
+        System.out.println("Pressed: " + shortTag);
         System.out.println("-----------------------------");
         // *******************************
         // determine the current state and what to do based on it
-        if (tag.equals("Clear")) {
+        if (shortTag.equals("Clear")) {
             resetValues();
             changeElementDisplay("0");
             changeElementCurrentState(DefaultModel.CalculatorState.CLEAR);
         }
-        else if (tag.equals("Equals")){
+        else if (shortTag.equals("Sqrt")){
+            handleSQRT();
+        }
+        else if (shortTag.equals("Equals")){
+            if (model_zero.getRightOperand().equals(new BigDecimal(0))){
+                model_zero.setRightOperand(model_zero.getLeftOperand());
+            }
             computeResult();
             changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
         }
         else{
             switch (state) {
                 case CLEAR:
-                    handleClear(tag);
+                    handleClear(shortTag);
                     break;
                 case LHS:
-                    handleLHS(tag);
+                    handleLHS(shortTag);
                     break;
                 case OP_SCHEDULED:
-                    handleOperator(tag);
+                    handleOperator(shortTag);
                     break;
                 case RHS:
-                    handleRHS(tag);
+                    handleRHS(shortTag);
                     break;
                 case RESULT:
-                    handleResult(tag);
+                    handleResult(shortTag);
                     break;
                 case ERROR:
-                    handleError(tag);
+                    handleError(shortTag);
                     break;
                 default:
                     Log.i("DefaultController: ", "Failed to determine current state");
@@ -101,7 +108,7 @@ public class DefaultController extends AbstractController
         // code for debugging
         System.out.println("------------After Switch-----------------");
         System.out.println(model_zero.toString());
-        System.out.println("Pressed: " + tag);
+        System.out.println("Pressed: " + shortTag);
         System.out.println("-----------------------------");
         // *******************************
     }
@@ -117,7 +124,12 @@ public class DefaultController extends AbstractController
     }
     private void handleLHS(String input){
         if (isNum(input)){
-            buildLeftOperand(Integer.parseInt(input));
+            try {
+                int value = Integer.parseInt(input);
+                buildLeftOperand(value);
+            } catch (NumberFormatException e){
+                System.out.println("Notification: Left Side Number Cannot Be Larger");
+            }
         }
         else {
             changeElementCurrentState(DefaultModel.CalculatorState.LHS.nextState());
@@ -132,14 +144,22 @@ public class DefaultController extends AbstractController
         else{
             for (DefaultModel.Operator op : DefaultModel.Operator.values()){
                 if (op.name().equals(input.toUpperCase())) {
+                    changeElementRightOperand(new BigDecimal(0));
                     changeElementCurrentOperator(op);
+                    String operatorSymbol = view_zero.getButtonSymbol(input);
+                    changeElementDisplay(model_zero.getLeftOperand() + " " + operatorSymbol);
                 }
             }
         }
     }
     private void handleRHS(String input){
         if (isNum(input)){
-            buildRightOperand(Integer.parseInt(input));
+            try {
+                int value = Integer.parseInt(input);
+                buildRightOperand(value);
+            } catch (NumberFormatException e){
+                System.out.println("Notification: Right Side Number Cannot Be Larger");
+            }
         }
         else {
             changeElementCurrentState(DefaultModel.CalculatorState.RHS.nextState());
@@ -149,7 +169,7 @@ public class DefaultController extends AbstractController
     private void handleResult(String input){
         if (isNum(input)){
             changeElementCurrentState(DefaultModel.CalculatorState.RESULT.nextState());
-            //changeElementLeftOperand(new BigDecimal(0));
+            changeElementLeftOperand(new BigDecimal(0));
             handleLHS(input);
         }
         else {
@@ -163,6 +183,11 @@ public class DefaultController extends AbstractController
             changeElementCurrentState(DefaultModel.CalculatorState.ERROR.nextState());
             handleLHS(input);
         }
+    }
+    private void handleSQRT(){
+        changeElementCurrentOperator(DefaultModel.Operator.SQRT);
+        computeResult();
+        changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
     }
     private void buildLeftOperand(int digit){
         BigDecimal left = model_zero.getLeftOperand();

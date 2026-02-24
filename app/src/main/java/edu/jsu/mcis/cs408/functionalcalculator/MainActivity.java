@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
 
         /* Register Activity View and Model with Controller */
         controller.addView(this);
+        controller.setView_zero(this);
         controller.addModel(model);
         controller.setModel_zero(model);
 
@@ -71,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
             String tag = view.getTag().toString();
             Toast toast = Toast.makeText(binding.getRoot().getContext(), tag, Toast.LENGTH_SHORT);
             toast.show();
-            controller.handleButtonLogic(view);
+            controller.handleButtonLogic(view.getTag().toString());
         }
     }
 
@@ -184,5 +185,15 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
         btn.setTag(names[index]);
         btn.setText(faces[index]);
         btn.setTextSize(txtSize);
+    }
+    public String getButtonSymbol(String tag){
+        String name = "btn" + tag;
+        String[] buttons = getResources().getStringArray(R.array.btn_names);
+        for (int i = 0; i < buttons.length; i++){
+            if (buttons[i].equals(name)){
+                return getResources().getStringArray(R.array.btn_faces)[i];
+            }
+        }
+        return null;
     }
 }
