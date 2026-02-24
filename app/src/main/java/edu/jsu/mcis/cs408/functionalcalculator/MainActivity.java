@@ -57,7 +57,8 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
         String propertyName = evt.getPropertyName();
         String propertyValue = evt.getNewValue().toString();
 
-        Log.i(TAG, "New " + propertyName + " Value from Model: " + propertyValue);
+        // Log statement to for testing changes to the display
+        //Log.i(TAG, "New " + propertyName + " Value from Model: " + propertyValue);
 
         if ( propertyName.equals(DefaultController.ELEMENT_DISPLAY_PROPERTY) ) {
             TextView display = (TextView) binding.getRoot().getViewById(DisplayID);
@@ -70,8 +71,9 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
         @Override
         public void onClick(View view) {
             String tag = view.getTag().toString();
-            Toast toast = Toast.makeText(binding.getRoot().getContext(), tag, Toast.LENGTH_SHORT);
-            toast.show();
+            // Toasts to show button inputs for testing
+            //Toast toast = Toast.makeText(binding.getRoot().getContext(), tag, Toast.LENGTH_SHORT);
+            //toast.show();
             controller.handleButtonLogic(view.getTag().toString());
         }
     }

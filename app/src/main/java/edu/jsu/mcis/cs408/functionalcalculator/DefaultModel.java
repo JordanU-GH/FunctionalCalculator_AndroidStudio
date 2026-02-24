@@ -13,23 +13,24 @@ public class DefaultModel extends AbstractModel {
     private BigDecimal RightOperand;
     private Operator CurrentOperator;
     private CalculatorState CurrentState;
+    private Boolean period;
     public enum CalculatorState{
         CLEAR{ @Override public CalculatorState nextState(){ return LHS; } },
         LHS{ @Override public CalculatorState nextState(){ return OP_SCHEDULED; } },
         OP_SCHEDULED{ @Override public CalculatorState nextState(){ return RHS; } },
-        RHS{ @Override public CalculatorState nextState(){ return RESULT; } },
+        RHS{ @Override public CalculatorState nextState(){ return OP_SCHEDULED; } },
         RESULT{ @Override public CalculatorState nextState(){ return LHS; } },
         ERROR{ @Override public CalculatorState nextState(){ return LHS; } };
         public abstract CalculatorState nextState();
     }
     public enum Operator{
-        ADD{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.add(R, MathContext.DECIMAL64); } },
-        SUB{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.subtract(R, MathContext.DECIMAL64); } },
-        MULT{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.multiply(R, MathContext.DECIMAL64); } },
-        DIV{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.divide(R, MathContext.DECIMAL64); } },
+        ADD{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.add(R, MathContext.DECIMAL32); } },
+        SUB{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.subtract(R, MathContext.DECIMAL32); } },
+        MULT{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.multiply(R, MathContext.DECIMAL32); } },
+        DIV{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.divide(R, MathContext.DECIMAL32); } },
         NEG{@Override public BigDecimal compute(BigDecimal operand, BigDecimal empty){ return operand.negate(); } },
-        SQRT{@Override public BigDecimal compute(BigDecimal operand, BigDecimal empty){ return operand.sqrt(MathContext.DECIMAL64); } },
-        PERC{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.multiply(R).divide(new BigDecimal( 100), MathContext.DECIMAL64); } },
+        SQRT{@Override public BigDecimal compute(BigDecimal operand, BigDecimal empty){ return operand.sqrt(MathContext.DECIMAL32); } },
+        PERC{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.multiply(R).divide(new BigDecimal( 100), MathContext.DECIMAL32); } },
         NONE{@Override public BigDecimal compute(BigDecimal operand, BigDecimal empty){ return operand; }};
         public abstract BigDecimal compute(BigDecimal L, BigDecimal R);
     }
@@ -46,7 +47,9 @@ public class DefaultModel extends AbstractModel {
         setCurrentState(CalculatorState.CLEAR);
         setLeftOperand(new BigDecimal(0));
         setRightOperand(new BigDecimal(0));
+        setOperandScale(0);
         setDisplayText(new BigDecimal(0).toString());
+        setPeriod(false);
 
     }
 
@@ -61,6 +64,7 @@ public class DefaultModel extends AbstractModel {
     public CalculatorState getCurrentState(){ return this.CurrentState; }
     public BigDecimal getLeftOperand(){ return this.LeftOperand; }
     public BigDecimal getRightOperand(){ return this.RightOperand; }
+    public Boolean getPeriod(){ return this.period; }
 
     /*
      * Setter for the display.  Notice that, in addition to changing the
@@ -75,15 +79,14 @@ public class DefaultModel extends AbstractModel {
         String oldVal = this.DisplayText;
         this.DisplayText = newVal;
 
-        Log.i(TAG, "DisplayText Change: From " + oldVal + " to " + newVal);
+        // Log statement for troubleshooting
+        //Log.i(TAG, "DisplayText Change: From " + oldVal + " to " + newVal);
 
         firePropertyChange(DefaultController.ELEMENT_DISPLAY_PROPERTY, oldVal, newVal);
 
     }
 
-    public void setCurrentOperator(Operator newOp) {
-        this.CurrentOperator = newOp;
-    }
+    public void setCurrentOperator(Operator newOp) { this.CurrentOperator = newOp; }
     public void setCurrentState(CalculatorState newState){
      this.CurrentState = newState;
     }
@@ -93,6 +96,13 @@ public class DefaultModel extends AbstractModel {
     public void setLeftOperand(BigDecimal newVal){
         this.LeftOperand = newVal;
     }
+    public void setOperandScale(Integer newVal){
+        this.LeftOperand.setScale(newVal);
+        this.RightOperand.setScale(newVal);
+    }
+    public void setPeriod(Boolean newVal){
+        this.period = newVal;
+    }
 
     @Override
     public String toString(){
@@ -101,6 +111,7 @@ public class DefaultModel extends AbstractModel {
         dict.put("State", getCurrentState());
         dict.put("LeftOperand", getLeftOperand());
         dict.put("RightOperand", getRightOperand());
+        dict.put("Period", getPeriod());
         return dict.toString();
     }
 }

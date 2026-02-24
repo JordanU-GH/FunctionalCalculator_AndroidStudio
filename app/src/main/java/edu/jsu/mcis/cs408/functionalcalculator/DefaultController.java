@@ -3,6 +3,7 @@ package edu.jsu.mcis.cs408.functionalcalculator;
 import android.util.Log;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public class DefaultController extends AbstractController
 {
@@ -21,6 +22,8 @@ public class DefaultController extends AbstractController
     public static final String ELEMENT_RIGHT_OPERAND_PROPERTY = "RightOperand";
     public static final String ELEMENT_CURRENT_OPERATOR_PROPERTY = "CurrentOperator";
     public static final String ELEMENT_CURRENT_STATE_PROPERTY = "CurrentState";
+    public static final String ELEMENT_OPERAND_SCALE = "OperandScale";
+    public static final String ELEMENT_PERIOD_PROPERTY = "Period";
 
 
     // Method to set one model as our primary one
@@ -51,6 +54,12 @@ public class DefaultController extends AbstractController
     public void changeElementCurrentState(DefaultModel.CalculatorState newVal) {
         this.setModelProperty(ELEMENT_CURRENT_STATE_PROPERTY, newVal);
     }
+    public void changeElementOperandScale(Integer newVal){
+        this.setModelProperty(ELEMENT_OPERAND_SCALE, newVal);
+    }
+    public void changeElementPeriod(Boolean newVal){
+        this.setModelProperty(ELEMENT_PERIOD_PROPERTY, newVal);
+    }
 
     // Method to determine button functionality
     public void handleButtonLogic(String tag){
@@ -58,58 +67,70 @@ public class DefaultController extends AbstractController
         DefaultModel.CalculatorState state = model_zero.getCurrentState();
         // *******************************
         // code for debugging
-        System.out.println("--------------Before Switch---------------");
+        System.out.println("\n");
+        System.out.println("-------------- Before Switch Statements ---------------");
         System.out.println(model_zero.toString());
         System.out.println("Pressed: " + shortTag);
         System.out.println("-----------------------------");
         // *******************************
-        // determine the current state and what to do based on it
-        if (shortTag.equals("Clear")) {
-            resetValues();
-            changeElementDisplay("0");
-            changeElementCurrentState(DefaultModel.CalculatorState.CLEAR);
-        }
-        else if (shortTag.equals("Sqrt")){
-            handleSQRT();
-        }
-        else if (shortTag.equals("Equals")){
-            if (model_zero.getRightOperand().equals(new BigDecimal(0))){
-                model_zero.setRightOperand(model_zero.getLeftOperand());
-            }
-            computeResult();
-            changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
-        }
-        else{
-            switch (state) {
-                case CLEAR:
-                    handleClear(shortTag);
-                    break;
-                case LHS:
-                    handleLHS(shortTag);
-                    break;
-                case OP_SCHEDULED:
-                    handleOperator(shortTag);
-                    break;
-                case RHS:
-                    handleRHS(shortTag);
-                    break;
-                case RESULT:
-                    handleResult(shortTag);
-                    break;
-                case ERROR:
-                    handleError(shortTag);
-                    break;
-                default:
-                    Log.i("DefaultController: ", "Failed to determine current state");
-                    break;
-            }
+        // Switch statements for determining logic
+        switch (shortTag) {
+            // First switch statement
+            // These cases are for inputs that operate regardless of current state or can have multiple interactions
+            // depending on the current state and/or operator
+            case "Clear":
+                resetValues();
+                changeElementCurrentState(DefaultModel.CalculatorState.CLEAR);
+                break;
+            case "Equals":
+                if (model_zero.getRightOperand().equals(new BigDecimal(0))){
+                    model_zero.setRightOperand(model_zero.getLeftOperand());
+                }
+                computeResult();
+                changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
+                break;
+            case "Sqrt":
+                handleSQRT();
+                break;
+            case "Perc":
+                handlePercent();
+                break;
+            default:
+                // Second switch statement
+                // These cases are for standard state transitions which operate
+                // depending on the current state only
+                switch (state) {
+                    case CLEAR:
+                        handleClear(shortTag);
+                        break;
+                    case LHS:
+                        handleLHS(shortTag);
+                        break;
+                    case OP_SCHEDULED:
+                        handleOperator(shortTag);
+                        break;
+                    case RHS:
+                        handleRHS(shortTag);
+                        break;
+                    case RESULT:
+                        handleResult(shortTag);
+                        break;
+                    case ERROR:
+                        handleError(shortTag);
+                        break;
+                    default:
+                        Log.i("DefaultController: ", "Failed to determine current state");
+                        break;
+                }
+                break;
         }
         // *******************************
         // code for debugging
-        System.out.println("------------After Switch-----------------");
+        System.out.println("------------ After Switch Statements -----------------");
         System.out.println(model_zero.toString());
         System.out.println("Pressed: " + shortTag);
         System.out.println("-----------------------------");
+        System.out.println("\n");
         // *******************************
     }
 
@@ -130,6 +151,9 @@ public class DefaultController extends AbstractController
             } catch (NumberFormatException e){
                 System.out.println("Notification: Left Side Number Cannot Be Larger");
             }
+        }
+        else if (input.equals("Period")){
+            handlePeriod(model_zero.getLeftOperand());
         }
         else {
             changeElementCurrentState(DefaultModel.CalculatorState.LHS.nextState());
@@ -164,6 +188,7 @@ public class DefaultController extends AbstractController
         else {
             changeElementCurrentState(DefaultModel.CalculatorState.RHS.nextState());
             computeResult();
+            handleOperator(input);
         }
     }
     private void handleResult(String input){
@@ -189,6 +214,19 @@ public class DefaultController extends AbstractController
         computeResult();
         changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
     }
+    private void handlePeriod(BigDecimal currentOperand) {
+        if (!model_zero.getPeriod()) {
+            changeElementPeriod(true);
+            BigDecimal newOperand = currentOperand.setScale(1);
+            changeElementLeftOperand(newOperand);
+            changeElementDisplay(newOperand.toString().replaceFirst(".0", "."));
+            // Code for troubleshooting
+            System.out.println("Current: " + currentOperand + " || New: " + newOperand);
+        }
+    }
+    private void handlePercent(){
+
+    }
     private void buildLeftOperand(int digit){
         BigDecimal left = model_zero.getLeftOperand();
         StringBuilder builder = new StringBuilder();
@@ -196,7 +234,12 @@ public class DefaultController extends AbstractController
             builder.append(left);
         }
         builder.append(digit);
-        left = BigDecimal.valueOf(Integer.parseInt(builder.toString()));
+        if (model_zero.getPeriod()) {
+            left = BigDecimal.valueOf(Double.parseDouble(builder.toString()));
+        }
+        else{
+            left = BigDecimal.valueOf(Integer.parseInt(builder.toString()));
+        }
         changeElementLeftOperand(left);
         changeElementDisplay(builder.toString());
     }
@@ -221,8 +264,11 @@ public class DefaultController extends AbstractController
         changeElementLeftOperand(result);
     }
     private void resetValues(){
+        changeElementPeriod(false);
+        changeElementOperandScale(0);
         changeElementLeftOperand(new BigDecimal(0));
         changeElementRightOperand(new BigDecimal(0));
+        changeElementDisplay("0");
         changeElementCurrentOperator(DefaultModel.Operator.NONE);
     }
 }
