@@ -15,6 +15,7 @@ public class DefaultModel extends AbstractModel {
     private Operator CurrentOperator;
     private CalculatorState CurrentState;
     private Boolean period;
+    private Boolean sqrt;
     public enum CalculatorState{
         CLEAR{ @Override public CalculatorState nextState(){ return LHS; } },
         LHS{ @Override public CalculatorState nextState(){ return OP_SCHEDULED; } },
@@ -52,12 +53,13 @@ public class DefaultModel extends AbstractModel {
 
     public void initDefault() {
 
-        setCurrentOperator(Operator.NONE);
-        setCurrentState(CalculatorState.CLEAR);
-        setLeftOperand("0");
-        setRightOperand("0");
-        setDisplayText("0");
-        setPeriod(false);
+        this.setCurrentOperator(Operator.NONE);
+        this.setCurrentState(CalculatorState.CLEAR);
+        this.setLeftOperand("0");
+        this.setRightOperand("0");
+        this.setDisplayText("0");
+        this.setPeriod(false);
+        this.setSqrt(false);
 
     }
 
@@ -73,6 +75,7 @@ public class DefaultModel extends AbstractModel {
     public String getLeftOperand(){ return this.LeftOperand; }
     public String getRightOperand(){ return this.RightOperand; }
     public Boolean getPeriod(){ return this.period; }
+    public Boolean getSqrt(){ return this.sqrt; }
 
     /*
      * Setter for the display.  Notice that, in addition to changing the
@@ -104,9 +107,8 @@ public class DefaultModel extends AbstractModel {
     public void setLeftOperand(String newVal){
         this.LeftOperand = newVal;
     }
-    public void setPeriod(Boolean newVal){
-        this.period = newVal;
-    }
+    public void setPeriod(Boolean newVal){ this.period = newVal; }
+    public void setSqrt(Boolean newVal){ this.sqrt = newVal; }
 
     @Override
     public String toString(){

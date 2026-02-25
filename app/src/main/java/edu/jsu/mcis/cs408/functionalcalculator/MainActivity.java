@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
             // Toasts to show button inputs for testing
             //Toast toast = Toast.makeText(binding.getRoot().getContext(), tag, Toast.LENGTH_SHORT);
             //toast.show();
-            controller.handleButtonLogic(view.getTag().toString());
+            controller.handleButtonLogic(tag);
         }
     }
 
@@ -207,11 +207,7 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
         int displayWidth = display.getWidth();
         String padding = " X";
         String textWithPadding = newText + padding;
-        if (display.getPaint().measureText(textWithPadding) > displayWidth){
-            return true;
-        }else{
-            return false;
-        }
+        return display.getPaint().measureText(textWithPadding) > displayWidth;
     }
     public void enableOperatorBtns(Boolean flag){
         ConstraintLayout parent = binding.getRoot();
@@ -220,11 +216,7 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
             if (child instanceof Button){
                 String tag = child.getTag().toString();
                 if (!tag.replace("btn", "").matches("\\d")) {
-                    if (!flag && !tag.equals("btnClear")) {
-                        child.setEnabled(false);
-                    } else{
-                        child.setEnabled(true);
-                    }
+                    child.setEnabled(flag || tag.equals("btnClear"));
                 }
             }
         }

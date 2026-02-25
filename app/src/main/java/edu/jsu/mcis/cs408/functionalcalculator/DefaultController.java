@@ -22,6 +22,7 @@ public class DefaultController extends AbstractController
     public static final String ELEMENT_CURRENT_OPERATOR_PROPERTY = "CurrentOperator";
     public static final String ELEMENT_CURRENT_STATE_PROPERTY = "CurrentState";
     public static final String ELEMENT_PERIOD_PROPERTY = "Period";
+    public static final String ELEMENT_SQRT_PROPERTY = "Sqrt";
 
 
     // Method to set one model as our primary one
@@ -55,6 +56,9 @@ public class DefaultController extends AbstractController
     public void changeElementPeriod(Boolean newVal){
         this.setModelProperty(ELEMENT_PERIOD_PROPERTY, newVal);
     }
+    public void changeElementSqrt(Boolean newVal){
+        this.setModelProperty(ELEMENT_SQRT_PROPERTY, newVal);
+    }
 
     // Method to determine button functionality
     public void handleButtonLogic(String tag){
@@ -78,45 +82,16 @@ public class DefaultController extends AbstractController
                 changeElementCurrentState(DefaultModel.CalculatorState.CLEAR);
                 break;
             case "Equals":
-                if (model_zero.getCurrentState() == DefaultModel.CalculatorState.OP_SCHEDULED) {
-                    if (model_zero.getRightOperand().equals("0")) {
-                        model_zero.setRightOperand(model_zero.getLeftOperand());
-                    }
-                }
-                try {
-                    computeResult();
-                    changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
-                } catch (ArithmeticException e){
-                    System.out.println("Error: Issue With Performing Operation");
-                    e.printStackTrace();
-                    changeElementCurrentState(DefaultModel.CalculatorState.ERROR);
-                    changeElementDisplay(e.getMessage());
-                    view_zero.enableOperatorBtns(false);
-                }
-                changeElementPeriod(false);
+                handleEquals(state);
                 break;
             case "Neg":
-                //changeElementCurrentOperator(DefaultModel.Operator.NEG);
-                if (state.equals(DefaultModel.CalculatorState.RHS)){
-                    BigDecimal newval = DefaultModel.Operator.NEG.compute(new BigDecimal(model_zero.getRightOperand()), new BigDecimal(0));
-                    changeElementDisplay(newval.toString());
-                    changeElementRightOperand(newval.toString());
-                }
-                else if (state.equals(DefaultModel.CalculatorState.OP_SCHEDULED)) {
-                    BigDecimal newval = DefaultModel.Operator.NEG.compute(new BigDecimal(model_zero.getLeftOperand()), new BigDecimal(0));
-                    changeElementDisplay(newval.toString());
-                    changeElementRightOperand(newval.toString());
-                    this.handleButtonLogic("btnEquals");
-                }
-                else {
-                    computeResult();
-                }
+                handleNeg(state);
                 break;
             case "Sqrt":
-                handleSQRT();
+                handleSQRT(state);
                 break;
             case "Perc":
-                handlePercent();
+                handlePercent(state);
                 break;
             default:
                 // Second switch statement
@@ -189,6 +164,7 @@ public class DefaultController extends AbstractController
         if (isNum(input)){
             changeElementCurrentState(DefaultModel.CalculatorState.OP_SCHEDULED.nextState());
             handleRHS(input);
+            changeElementSqrt(false);
         }
         else if (input.equals("Period")){
             handlePeriod(model_zero.getRightOperand());
@@ -245,10 +221,42 @@ public class DefaultController extends AbstractController
             handleLHS(input);
         }
     }
-    private void handleSQRT(){
-        changeElementCurrentOperator(DefaultModel.Operator.SQRT);
-        computeResult();
-        changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
+    private void handleEquals(DefaultModel.CalculatorState state){
+        if (state.equals(DefaultModel.CalculatorState.OP_SCHEDULED)) {
+            if (model_zero.getRightOperand().equals("0")) {
+                model_zero.setRightOperand(model_zero.getLeftOperand());
+            }
+        }
+        try {
+            computeResult();
+            changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
+        } catch (ArithmeticException e){
+            System.out.println("Error: Issue With Performing Operation");
+            e.printStackTrace();
+            changeElementCurrentState(DefaultModel.CalculatorState.ERROR);
+            changeElementDisplay(e.getMessage());
+            view_zero.enableOperatorBtns(false);
+        }
+        changeElementPeriod(false);
+    }
+    private void handleSQRT(DefaultModel.CalculatorState state){
+        DefaultModel.Operator currentOp = model_zero.getCurrentOperator();
+        changeElementSqrt(true);
+        if (state.equals(DefaultModel.CalculatorState.RHS)){
+            BigDecimal newVal = DefaultModel.Operator.SQRT.compute(new BigDecimal(model_zero.getRightOperand()), new BigDecimal(0));
+            changeElementDisplay(newVal.toString());
+            changeElementRightOperand(newVal.toString());
+        }
+        else if (state.equals(DefaultModel.CalculatorState.OP_SCHEDULED)) {
+            BigDecimal newVal = DefaultModel.Operator.SQRT.compute(new BigDecimal(model_zero.getLeftOperand()), new BigDecimal(0));
+            changeElementDisplay(newVal.toString());
+            changeElementRightOperand(newVal.toString());
+        }
+        else {
+            changeElementCurrentOperator(DefaultModel.Operator.SQRT);
+            computeResult();
+            changeElementCurrentOperator(currentOp);
+        }
     }
     private void handlePeriod(String currentOperand) {
         if (!model_zero.getPeriod()) {
@@ -266,17 +274,61 @@ public class DefaultController extends AbstractController
                 changeElementCurrentState(DefaultModel.CalculatorState.LHS);
             }
             changeElementDisplay(newOperand);
-            // Code for troubleshooting
-            System.out.println("Current: " + currentOperand + " || New: " + newOperand);
         }
     }
-    private void handlePercent(){
-
+    private void handleNeg(DefaultModel.CalculatorState state){
+        DefaultModel.Operator currentOp = model_zero.getCurrentOperator();
+        if (state.equals(DefaultModel.CalculatorState.RHS)){
+            BigDecimal newVal = DefaultModel.Operator.NEG.compute(new BigDecimal(model_zero.getRightOperand()), new BigDecimal(0));
+            changeElementDisplay(newVal.toString());
+            changeElementRightOperand(newVal.toString());
+        }
+        else if (state.equals(DefaultModel.CalculatorState.OP_SCHEDULED)) {
+            BigDecimal newVal = DefaultModel.Operator.NEG.compute(new BigDecimal(model_zero.getLeftOperand()), new BigDecimal(0));
+            changeElementDisplay(newVal.toString());
+            changeElementRightOperand(newVal.toString());
+        }
+        else {
+            changeElementCurrentOperator(DefaultModel.Operator.NEG);
+            computeResult();
+            changeElementCurrentOperator(currentOp);
+            changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
+        }
+    }
+    private void handlePercent(DefaultModel.CalculatorState state){
+        String newVal = "Percent Value Error";
+        DefaultModel.Operator currentOp = model_zero.getCurrentOperator();
+        boolean addSub = currentOp.equals(DefaultModel.Operator.ADD) || currentOp.equals(DefaultModel.Operator.SUB);
+        boolean multDiv = currentOp.equals(DefaultModel.Operator.MULT) || currentOp.equals(DefaultModel.Operator.DIV);
+        if (state.equals(DefaultModel.CalculatorState.RHS)){
+            if (addSub){
+                newVal = DefaultModel.Operator.PERC.compute(new BigDecimal(model_zero.getLeftOperand()), new BigDecimal(model_zero.getRightOperand())).toString();
+            }else if (multDiv){
+                newVal = DefaultModel.Operator.PERC.compute(new BigDecimal(1), new BigDecimal(model_zero.getRightOperand())).toString();
+            }
+            changeElementDisplay(newVal);
+            changeElementRightOperand(newVal);
+        }
+        else if (state.equals(DefaultModel.CalculatorState.OP_SCHEDULED)) {
+            if (addSub){
+                newVal = DefaultModel.Operator.PERC.compute(new BigDecimal(model_zero.getLeftOperand()), new BigDecimal(model_zero.getLeftOperand())).toString();
+            }else if (multDiv){
+                newVal = DefaultModel.Operator.PERC.compute(new BigDecimal(1), new BigDecimal(model_zero.getLeftOperand())).toString();
+            }
+            changeElementDisplay(newVal);
+            changeElementRightOperand(newVal);
+        }
+        else {
+            changeElementCurrentOperator(DefaultModel.Operator.PERC);
+            computeResult();
+            changeElementCurrentOperator(currentOp);
+            changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
+        }
     }
     private void buildLeftOperand(int digit){
         String left = model_zero.getLeftOperand();
         StringBuilder builder = new StringBuilder();
-        if (!left.equals("0")) {
+        if (!left.equals("0") && !model_zero.getSqrt()) {
             builder.append(left);
         }
         builder.append(digit);
@@ -291,7 +343,7 @@ public class DefaultController extends AbstractController
     private void buildRightOperand(int digit) {
         String right = model_zero.getRightOperand();
         StringBuilder builder = new StringBuilder();
-        if (!right.equals("0")) {
+        if (!right.equals("0") && !model_zero.getSqrt()) {
             builder.append(right);
         }
         builder.append(digit);
@@ -319,5 +371,6 @@ public class DefaultController extends AbstractController
         changeElementDisplay("0");
         changeElementCurrentOperator(DefaultModel.Operator.NONE);
         view_zero.enableOperatorBtns(true);
+        changeElementSqrt(false);
     }
 }
