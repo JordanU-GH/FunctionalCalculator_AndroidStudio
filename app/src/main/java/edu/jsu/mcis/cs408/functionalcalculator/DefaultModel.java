@@ -113,11 +113,12 @@ public class DefaultModel extends AbstractModel {
     @Override
     public String toString(){
         HashMap<String, Object> dict = new HashMap<>();
-        dict.put("Operator", getCurrentOperator());
-        dict.put("State", getCurrentState());
-        dict.put("LeftOperand", getLeftOperand());
-        dict.put("RightOperand", getRightOperand());
-        dict.put("Period", getPeriod());
+        dict.put("Operator", this.getCurrentOperator());
+        dict.put("State", this.getCurrentState());
+        dict.put("LeftOperand", this.getLeftOperand());
+        dict.put("RightOperand", this.getRightOperand());
+        dict.put("Period", this.getPeriod());
+        dict.put("Sqrt", this.getSqrt());
         return dict.toString();
     }
 }

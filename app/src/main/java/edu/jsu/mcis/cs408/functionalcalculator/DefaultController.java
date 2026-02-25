@@ -261,7 +261,12 @@ public class DefaultController extends AbstractController
     private void handlePeriod(String currentOperand) {
         if (!model_zero.getPeriod()) {
             changeElementPeriod(true);
-            String newOperand = currentOperand + ".";
+            String newOperand = "Period Placement Error";
+            if (model_zero.getSqrt()){
+                newOperand = "0.";
+            }else{
+                newOperand = currentOperand + ".";
+            }
             if (model_zero.getCurrentState() == DefaultModel.CalculatorState.OP_SCHEDULED){
                 changeElementRightOperand(newOperand);
                 changeElementCurrentState(DefaultModel.CalculatorState.RHS);
@@ -274,6 +279,7 @@ public class DefaultController extends AbstractController
                 changeElementCurrentState(DefaultModel.CalculatorState.LHS);
             }
             changeElementDisplay(newOperand);
+            changeElementSqrt(false);
         }
     }
     private void handleNeg(DefaultModel.CalculatorState state){
