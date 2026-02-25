@@ -5,6 +5,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -181,12 +182,15 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
         display.setText(text);
         display.setTextSize(txtSize);
         display.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
+        display.setMaxLines(1);
     }
     private void customizeBtn(Button btn, int id, int index, String [] names, String [] faces, int txtSize){
         btn.setId(id);
         btn.setTag(names[index]);
         btn.setText(faces[index]);
         btn.setTextSize(txtSize);
+        //btn.setBackgroundColor(getResources().getColor(R.color.blue));
+        //btn.setClicked(getResources().getColor(R.color.darker_blue));
     }
     public String getButtonSymbol(String tag){
         String name = "btn" + tag;
@@ -197,5 +201,32 @@ public class MainActivity extends AppCompatActivity implements AbstractView {
             }
         }
         return null;
+    }
+    public Boolean isDisplayFull(String newText){
+        TextView display = (TextView) binding.getRoot().getViewById(DisplayID);
+        int displayWidth = display.getWidth();
+        String padding = " X";
+        String textWithPadding = newText + padding;
+        if (display.getPaint().measureText(textWithPadding) > displayWidth){
+            return true;
+        }else{
+            return false;
+        }
+    }
+    public void enableOperatorBtns(Boolean flag){
+        ConstraintLayout parent = binding.getRoot();
+        for (int i = 0; i < parent.getChildCount(); i++){
+            View child = parent.getChildAt(i);
+            if (child instanceof Button){
+                String tag = child.getTag().toString();
+                if (!tag.replace("btn", "").matches("\\d")) {
+                    if (!flag && !tag.equals("btnClear")) {
+                        child.setEnabled(false);
+                    } else{
+                        child.setEnabled(true);
+                    }
+                }
+            }
+        }
     }
 }

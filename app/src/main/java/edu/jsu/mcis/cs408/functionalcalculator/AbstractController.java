@@ -77,9 +77,6 @@ public abstract class AbstractController implements PropertyChangeListener {
                 else if (newValue instanceof  DefaultModel.CalculatorState){
                     method = model.getClass().getMethod("set" + propertyName, DefaultModel.CalculatorState.class);
                 }
-                else if (newValue instanceof Integer){
-                    method = model.getClass().getMethod("set" + propertyName, Integer.class);
-                }
                 else {
                     method = model.getClass().getMethod("set" + propertyName, newValue.getClass());
                 }

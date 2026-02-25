@@ -1,5 +1,6 @@
 package edu.jsu.mcis.cs408.functionalcalculator;
 
+import android.os.Build;
 import android.util.Log;
 
 import java.math.BigDecimal;
@@ -9,8 +10,8 @@ import java.util.HashMap;
 public class DefaultModel extends AbstractModel {
     public static final String TAG = "DefaultModel";
     private String DisplayText;
-    private BigDecimal LeftOperand;
-    private BigDecimal RightOperand;
+    private String LeftOperand;
+    private String RightOperand;
     private Operator CurrentOperator;
     private CalculatorState CurrentState;
     private Boolean period;
@@ -29,7 +30,15 @@ public class DefaultModel extends AbstractModel {
         MULT{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.multiply(R, MathContext.DECIMAL32); } },
         DIV{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.divide(R, MathContext.DECIMAL32); } },
         NEG{@Override public BigDecimal compute(BigDecimal operand, BigDecimal empty){ return operand.negate(); } },
-        SQRT{@Override public BigDecimal compute(BigDecimal operand, BigDecimal empty){ return operand.sqrt(MathContext.DECIMAL32); } },
+        SQRT{@Override public BigDecimal compute(BigDecimal operand, BigDecimal empty){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                return operand.sqrt(MathContext.DECIMAL32);
+            }
+            else{
+                System.out.println("Error: Could not compute the square root because of an outdated Build Version");
+                return new BigDecimal("0");
+            }
+        } },
         PERC{@Override public BigDecimal compute(BigDecimal L, BigDecimal R){ return L.multiply(R).divide(new BigDecimal( 100), MathContext.DECIMAL32); } },
         NONE{@Override public BigDecimal compute(BigDecimal operand, BigDecimal empty){ return operand; }};
         public abstract BigDecimal compute(BigDecimal L, BigDecimal R);
@@ -45,10 +54,9 @@ public class DefaultModel extends AbstractModel {
 
         setCurrentOperator(Operator.NONE);
         setCurrentState(CalculatorState.CLEAR);
-        setLeftOperand(new BigDecimal(0));
-        setRightOperand(new BigDecimal(0));
-        setOperandScale(0);
-        setDisplayText(new BigDecimal(0).toString());
+        setLeftOperand("0");
+        setRightOperand("0");
+        setDisplayText("0");
         setPeriod(false);
 
     }
@@ -62,8 +70,8 @@ public class DefaultModel extends AbstractModel {
     }
     public Operator getCurrentOperator(){ return this.CurrentOperator; }
     public CalculatorState getCurrentState(){ return this.CurrentState; }
-    public BigDecimal getLeftOperand(){ return this.LeftOperand; }
-    public BigDecimal getRightOperand(){ return this.RightOperand; }
+    public String getLeftOperand(){ return this.LeftOperand; }
+    public String getRightOperand(){ return this.RightOperand; }
     public Boolean getPeriod(){ return this.period; }
 
     /*
@@ -90,15 +98,11 @@ public class DefaultModel extends AbstractModel {
     public void setCurrentState(CalculatorState newState){
      this.CurrentState = newState;
     }
-    public void setRightOperand(BigDecimal newVal){
+    public void setRightOperand(String newVal){
         this.RightOperand = newVal;
     }
-    public void setLeftOperand(BigDecimal newVal){
+    public void setLeftOperand(String newVal){
         this.LeftOperand = newVal;
-    }
-    public void setOperandScale(Integer newVal){
-        this.LeftOperand.setScale(newVal);
-        this.RightOperand.setScale(newVal);
     }
     public void setPeriod(Boolean newVal){
         this.period = newVal;

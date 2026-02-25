@@ -3,7 +3,6 @@ package edu.jsu.mcis.cs408.functionalcalculator;
 import android.util.Log;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 public class DefaultController extends AbstractController
 {
@@ -22,7 +21,6 @@ public class DefaultController extends AbstractController
     public static final String ELEMENT_RIGHT_OPERAND_PROPERTY = "RightOperand";
     public static final String ELEMENT_CURRENT_OPERATOR_PROPERTY = "CurrentOperator";
     public static final String ELEMENT_CURRENT_STATE_PROPERTY = "CurrentState";
-    public static final String ELEMENT_OPERAND_SCALE = "OperandScale";
     public static final String ELEMENT_PERIOD_PROPERTY = "Period";
 
 
@@ -42,10 +40,10 @@ public class DefaultController extends AbstractController
     public void changeElementDisplay(String newVal) {
         this.setModelProperty(ELEMENT_DISPLAY_PROPERTY, newVal);
     }
-    public void changeElementLeftOperand(BigDecimal newVal) {
+    public void changeElementLeftOperand(String newVal) {
         this.setModelProperty(ELEMENT_LEFT_OPERAND_PROPERTY, newVal);
     }
-    public void changeElementRightOperand(BigDecimal newVal) {
+    public void changeElementRightOperand(String newVal) {
         this.setModelProperty(ELEMENT_RIGHT_OPERAND_PROPERTY, newVal);
     }
     public void changeElementCurrentOperator(DefaultModel.Operator newVal) {
@@ -53,9 +51,6 @@ public class DefaultController extends AbstractController
     }
     public void changeElementCurrentState(DefaultModel.CalculatorState newVal) {
         this.setModelProperty(ELEMENT_CURRENT_STATE_PROPERTY, newVal);
-    }
-    public void changeElementOperandScale(Integer newVal){
-        this.setModelProperty(ELEMENT_OPERAND_SCALE, newVal);
     }
     public void changeElementPeriod(Boolean newVal){
         this.setModelProperty(ELEMENT_PERIOD_PROPERTY, newVal);
@@ -83,11 +78,39 @@ public class DefaultController extends AbstractController
                 changeElementCurrentState(DefaultModel.CalculatorState.CLEAR);
                 break;
             case "Equals":
-                if (model_zero.getRightOperand().equals(new BigDecimal(0))){
-                    model_zero.setRightOperand(model_zero.getLeftOperand());
+                if (model_zero.getCurrentState() == DefaultModel.CalculatorState.OP_SCHEDULED) {
+                    if (model_zero.getRightOperand().equals("0")) {
+                        model_zero.setRightOperand(model_zero.getLeftOperand());
+                    }
                 }
-                computeResult();
-                changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
+                try {
+                    computeResult();
+                    changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
+                } catch (ArithmeticException e){
+                    System.out.println("Error: Issue With Performing Operation");
+                    e.printStackTrace();
+                    changeElementCurrentState(DefaultModel.CalculatorState.ERROR);
+                    changeElementDisplay(e.getMessage());
+                    view_zero.enableOperatorBtns(false);
+                }
+                changeElementPeriod(false);
+                break;
+            case "Neg":
+                //changeElementCurrentOperator(DefaultModel.Operator.NEG);
+                if (state.equals(DefaultModel.CalculatorState.RHS)){
+                    BigDecimal newval = DefaultModel.Operator.NEG.compute(new BigDecimal(model_zero.getRightOperand()), new BigDecimal(0));
+                    changeElementDisplay(newval.toString());
+                    changeElementRightOperand(newval.toString());
+                }
+                else if (state.equals(DefaultModel.CalculatorState.OP_SCHEDULED)) {
+                    BigDecimal newval = DefaultModel.Operator.NEG.compute(new BigDecimal(model_zero.getLeftOperand()), new BigDecimal(0));
+                    changeElementDisplay(newval.toString());
+                    changeElementRightOperand(newval.toString());
+                    this.handleButtonLogic("btnEquals");
+                }
+                else {
+                    computeResult();
+                }
                 break;
             case "Sqrt":
                 handleSQRT();
@@ -138,8 +161,10 @@ public class DefaultController extends AbstractController
         if (isNum(input)){
             changeElementCurrentState(DefaultModel.CalculatorState.CLEAR.nextState());
             handleLHS(input);
-        } else {
-            changeElementCurrentState(DefaultModel.CalculatorState.OP_SCHEDULED);
+        }
+        else if (input.equals("Period")){
+            handlePeriod(model_zero.getLeftOperand());
+        }else {
             handleOperator(input);
         }
     }
@@ -165,13 +190,17 @@ public class DefaultController extends AbstractController
             changeElementCurrentState(DefaultModel.CalculatorState.OP_SCHEDULED.nextState());
             handleRHS(input);
         }
+        else if (input.equals("Period")){
+            handlePeriod(model_zero.getRightOperand());
+        }
         else{
             for (DefaultModel.Operator op : DefaultModel.Operator.values()){
                 if (op.name().equals(input.toUpperCase())) {
-                    changeElementRightOperand(new BigDecimal(0));
+                    changeElementRightOperand("0");
                     changeElementCurrentOperator(op);
                     String operatorSymbol = view_zero.getButtonSymbol(input);
                     changeElementDisplay(model_zero.getLeftOperand() + " " + operatorSymbol);
+                    changeElementPeriod(false);
                 }
             }
         }
@@ -185,6 +214,9 @@ public class DefaultController extends AbstractController
                 System.out.println("Notification: Right Side Number Cannot Be Larger");
             }
         }
+        else if (input.equals("Period")){
+            handlePeriod(model_zero.getRightOperand());
+        }
         else {
             changeElementCurrentState(DefaultModel.CalculatorState.RHS.nextState());
             computeResult();
@@ -194,8 +226,12 @@ public class DefaultController extends AbstractController
     private void handleResult(String input){
         if (isNum(input)){
             changeElementCurrentState(DefaultModel.CalculatorState.RESULT.nextState());
-            changeElementLeftOperand(new BigDecimal(0));
+            changeElementLeftOperand("0");
             handleLHS(input);
+        }
+        else if (input.equals("Period")){
+            changeElementLeftOperand("0");
+            handlePeriod(model_zero.getLeftOperand());
         }
         else {
             changeElementCurrentState(DefaultModel.CalculatorState.OP_SCHEDULED);
@@ -214,12 +250,22 @@ public class DefaultController extends AbstractController
         computeResult();
         changeElementCurrentState(DefaultModel.CalculatorState.RESULT);
     }
-    private void handlePeriod(BigDecimal currentOperand) {
+    private void handlePeriod(String currentOperand) {
         if (!model_zero.getPeriod()) {
             changeElementPeriod(true);
-            BigDecimal newOperand = currentOperand.setScale(1);
-            changeElementLeftOperand(newOperand);
-            changeElementDisplay(newOperand.toString().replaceFirst(".0", "."));
+            String newOperand = currentOperand + ".";
+            if (model_zero.getCurrentState() == DefaultModel.CalculatorState.OP_SCHEDULED){
+                changeElementRightOperand(newOperand);
+                changeElementCurrentState(DefaultModel.CalculatorState.RHS);
+            }
+            else if (model_zero.getCurrentState() == DefaultModel.CalculatorState.RHS){
+                changeElementRightOperand(newOperand);
+            }
+            else{
+                changeElementLeftOperand(newOperand);
+                changeElementCurrentState(DefaultModel.CalculatorState.LHS);
+            }
+            changeElementDisplay(newOperand);
             // Code for troubleshooting
             System.out.println("Current: " + currentOperand + " || New: " + newOperand);
         }
@@ -228,47 +274,50 @@ public class DefaultController extends AbstractController
 
     }
     private void buildLeftOperand(int digit){
-        BigDecimal left = model_zero.getLeftOperand();
+        String left = model_zero.getLeftOperand();
         StringBuilder builder = new StringBuilder();
-        if (!left.equals(new BigDecimal(0))) {
+        if (!left.equals("0")) {
             builder.append(left);
         }
         builder.append(digit);
-        if (model_zero.getPeriod()) {
-            left = BigDecimal.valueOf(Double.parseDouble(builder.toString()));
+        if (!view_zero.isDisplayFull(builder.toString())) {
+            changeElementLeftOperand(builder.toString());
+            changeElementDisplay(builder.toString());
         }
         else{
-            left = BigDecimal.valueOf(Integer.parseInt(builder.toString()));
+            System.out.println("Notification: Left Side Max Characters Reached");
         }
-        changeElementLeftOperand(left);
-        changeElementDisplay(builder.toString());
     }
-    private void buildRightOperand(int digit){
-        BigDecimal right = model_zero.getRightOperand();
+    private void buildRightOperand(int digit) {
+        String right = model_zero.getRightOperand();
         StringBuilder builder = new StringBuilder();
-        if (!right.equals(new BigDecimal(0))) {
+        if (!right.equals("0")) {
             builder.append(right);
         }
         builder.append(digit);
-        right = BigDecimal.valueOf(Integer.parseInt(builder.toString()));
-        changeElementRightOperand(right);
-        changeElementDisplay(builder.toString());
+        if (!view_zero.isDisplayFull(builder.toString())) {
+            changeElementRightOperand(builder.toString());
+            changeElementDisplay(builder.toString());
+        }
+        else{
+            System.out.println("Notification: Right Side Max Characters Reached");
+        }
     }
     private boolean isNum(String digit){
         return digit.matches("\\d");
     }
     private void computeResult(){
         DefaultModel.Operator op = model_zero.getCurrentOperator();
-        BigDecimal result = op.compute(model_zero.getLeftOperand(), model_zero.getRightOperand());
+        BigDecimal result = op.compute(new BigDecimal(model_zero.getLeftOperand()), new BigDecimal(model_zero.getRightOperand()));
         changeElementDisplay(result.toString());
-        changeElementLeftOperand(result);
+        changeElementLeftOperand(result.toString());
     }
     private void resetValues(){
         changeElementPeriod(false);
-        changeElementOperandScale(0);
-        changeElementLeftOperand(new BigDecimal(0));
-        changeElementRightOperand(new BigDecimal(0));
+        changeElementLeftOperand("0");
+        changeElementRightOperand("0");
         changeElementDisplay("0");
         changeElementCurrentOperator(DefaultModel.Operator.NONE);
+        view_zero.enableOperatorBtns(true);
     }
 }
